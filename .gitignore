@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+.history/
+*.ipynb
+
+# Data files (IMPORTANT)
+data/
+*.wav
+*.mp3
+*.pkl
+*.pth
+*.h5
+*.pb
+
+# Images and temporary files
+*.png
+*.jpg
+*.jpeg
+temp*.wav
+output.png
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+
+# Git LFS (if you use it)
+.gitattributes
+
+# Model outputs
+notebooks/saved_models/
+notebooks/saved_data/
+drafts/
