@@ -3,6 +3,7 @@ import numpy as np
 import streamlit as st
 import torch
 import torch.nn as nn
+import os
 
 # ======================================================
 # CONFIGURATION
@@ -55,7 +56,7 @@ class ImprovedSimpleCNN(nn.Module):
 
 
 # ======================================================
-# CHARGEMENT DU MODÈLE (sans notification)
+# CHARGEMENT DU MODÈLE
 # ======================================================
 @st.cache_resource
 def load_model():
@@ -74,7 +75,7 @@ def load_model():
 model = load_model()
 
 # ======================================================
-# CONFIG STREAMLIT
+# CONFIG STREAMLIT + CSS
 # ======================================================
 st.set_page_config(
     page_title="Baby Cry Classifier",
@@ -82,7 +83,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ====================== CSS MODERNE ======================
 st.markdown(
     f"""
     <style>
@@ -99,11 +99,11 @@ st.markdown(
         padding: 2rem 1rem;
     }}
 
-    h1, h2, h3, h4, .stMarkdown, p, label {{
+    h1, h2, h3, h4, p, label {{
         color: {COLORS["text"]} !important;
     }}
 
-    /* Bouton Analyse */
+    /* Bouton */
     .stButton>button {{
         width: 100%;
         border-radius: 999px;
@@ -113,23 +113,25 @@ st.markdown(
         background-color: {COLORS["accent"]} !important;
         color: #1e3a34 !important;
         border: none;
-        transition: all 0.3s ease;
     }}
 
     .stButton>button:hover {{
-        background-color: #A7E0E0 !important;
+        background-color: {COLORS["light"]} !important;
         transform: translateY(-2px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.2);
     }}
 
-    /* Supprimer les notifications par défaut */
-    .stSuccess, .stInfo, .element-container div[data-testid="stAlert"] {{
-        display: none !important;
-    }}
-
-    /* Amélioration des progress bars */
-    .stProgress > div > div {{
-        background-color: {COLORS["light"]} !important;
+    /* Focus Color */
+    .stButton>button:focus,
+    .stButton>button:focus-visible,
+    input:focus,
+    textarea:focus,
+    .stTextInput > div > div > input:focus,
+    div[data-baseweb="select"] > div:focus-within,
+    .stAudioInput > div:focus-within {{
+        outline: 3px solid #A7E0E0 !important;
+        box-shadow: 0 0 0 3px rgba(167, 224, 224, 0.35) !important;
+        border-color: #A7E0E0 !important;
     }}
     </style>
     """,
@@ -137,7 +139,7 @@ st.markdown(
 )
 
 # ======================================================
-# PREPROCESSING & PREDICTION
+# FONCTIONS
 # ======================================================
 def preprocess_audio(audio_file):
     y, _ = librosa.load(audio_file, sr=SR, duration=DURATION)
@@ -177,35 +179,66 @@ with col_title:
     st.markdown("**Modèle : ImprovedSimpleCNN (90.24% accuracy)**")
 
 with col_img:
-    try:
-        st.image("assets/baby.png", use_column_width=True)
-    except:
-        st.empty()
+    image_path = "assets/images/baby.png"
+    if os.path.exists(image_path):
+        st.image(image_path, use_container_width=True)
+    else:
+        st.markdown("""
+        <div style="background-color: rgba(255,255,255,0.1); 
+                    height: 160px; border-radius: 20px;
+                    display: flex; align-items: center; justify-content: center;
+                    color: white; font-size: 1rem;">
+            Image non trouvée
+        </div>
+        """, unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader("Déposez un fichier audio **.wav**", type=["wav"])
+# ====================== Enregistrement + Upload ======================
+st.markdown("### Enregistrer ou télécharger l'audio")
 
-if uploaded_file is not None:
-    st.audio(uploaded_file, format="audio/wav")
+tab1, tab2 = st.tabs(["Enregistrer avec le micro", "Charger un fichier"])
+
+audio_file = None
+
+with tab1:
+    recorded_audio = st.audio_input("Appuyez pour enregistrer")
+    if recorded_audio:
+        audio_file = recorded_audio
+        st.markdown("""
+        <div style="padding: 10px 16px; background-color: rgba(167, 224, 224, 0.2); 
+                    color: white; border-radius: 12px; margin-top: 10px;">
+            ✅ Audio enregistré avec succès
+        </div>
+        """, unsafe_allow_html=True)
+
+with tab2:
+    uploaded_file = st.file_uploader("Déposez un fichier audio .wav", type=["wav"])
+    if uploaded_file:
+        audio_file = uploaded_file
+
+# ====================== Lecture + Analyse ======================
+if audio_file is not None:
+    st.audio(audio_file, format="audio/wav")
     
     if st.button(" Analyser le cri"):
         with st.spinner("Analyse en cours..."):
-            probs, pred_idx, confidence = predict(uploaded_file)
+            probs, pred_idx, confidence = predict(audio_file)
             
             if probs is not None:
                 predicted_class = class_names[pred_idx].replace("_", " ").title()
                 
-                # === Résultat demandé ===
+                st.markdown("---")
+                
                 col1, col2 = st.columns([1, 1])
                 
                 with col1:
                     st.markdown(f"""
                     <div style="background-color: rgba(255,255,255,0.1); 
-                                padding: 2rem; border-radius: 20px; text-align: center;">
-                        <h2 style="margin:0; color:{COLORS['light']}">Classe Prédite</h2>
-                        <h1 style="margin:0.5rem 0; color:white; font-size: 2.8rem;">
+                                padding: 2.5rem 1.5rem; border-radius: 20px; text-align: center;">
+                        <h2 style="margin:0; color:#A7E0E0;">Classe Prédite</h2>
+                        <h1 style="margin:1rem 0; color:white; font-size: 3rem;">
                             {predicted_class}
                         </h1>
-                        <h3 style="margin:0; color:{COLORS['accent']}">Confiance : {confidence:.1f}%</h3>
+                        <h3 style="margin:0; color:#BED3C3;">Confiance : {confidence:.1f}%</h3>
                     </div>
                     """, unsafe_allow_html=True)
                 
@@ -214,16 +247,15 @@ if uploaded_file is not None:
                     for i, (name, prob) in enumerate(zip(class_names, probs)):
                         name_display = name.replace("_", " ").title()
                         percentage = float(prob) * 100
+                        bar_color = "#A7E0E0" if i == pred_idx else "#BED3C3"
                         
-                        # Mettre en évidence la classe prédite
-                        bar_color = COLORS["light"] if i == pred_idx else COLORS["accent"]
                         st.markdown(f"""
-                        <div style="margin-bottom: 8px;">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                        <div style="margin-bottom: 12px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:500;">
                                 <span>{name_display}</span>
                                 <span><b>{percentage:.1f}%</b></span>
                             </div>
-                            <div style="height:10px; background:rgba(255,255,255,0.15); border-radius:10px; overflow:hidden;">
+                            <div style="height:12px; background:rgba(255,255,255,0.15); border-radius:10px; overflow:hidden;">
                                 <div style="width:{percentage}%; height:100%; background:{bar_color}; border-radius:10px;"></div>
                             </div>
                         </div>
