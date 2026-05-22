@@ -176,6 +176,18 @@ col_title, col_img = st.columns([7, 3])
 
 with col_title:
     st.title("Baby Cry Classifier")
+    st.markdown("""
+    <span style='font-size:1.5rem;'>
+    Cette application permet de reconnaître la cause probable des pleurs d’un bébé à partir d’un enregistrement audio.<br>
+    <span style='font-size:1.1rem;'>
+    Téléchargez ou enregistrez un cri, puis laissez l’IA analyser et prédire la raison du pleur parmi cinq catégories : faim, fatigue, douleur au ventre, inconfort ou besoin de roter.<br>
+    Simple, rapide et utile pour mieux comprendre les besoins de votre bébé !
+    </span>
+    </span>
+    """, unsafe_allow_html=True)
+    st.markdown("""
+    <div style='height:20px;'></div>
+    """, unsafe_allow_html=True)
     st.markdown("**Modèle : ImprovedSimpleCNN (90.24% accuracy)**")
 
 with col_img:
@@ -203,12 +215,6 @@ with tab1:
     recorded_audio = st.audio_input("Appuyez pour enregistrer")
     if recorded_audio:
         audio_file = recorded_audio
-        st.markdown("""
-        <div style="padding: 10px 16px; background-color: rgba(167, 224, 224, 0.2); 
-                    color: white; border-radius: 12px; margin-top: 10px;">
-            ✅ Audio enregistré avec succès
-        </div>
-        """, unsafe_allow_html=True)
 
 with tab2:
     uploaded_file = st.file_uploader("Déposez un fichier audio .wav", type=["wav"])
